@@ -10,12 +10,12 @@ License: GPL-2
 """
 from __future__ import division
 
-def getTextScores(text, locale='en_GB', simplewordlist=[]):
+def getTextScores(text, locale='en_GB', simplewordlist=[], smoggy=False):
     """
     Calculates several text scores based on a piece of text.
     A custom locale can be provided for the hyphenator, which
     maps to a Myspell hyphenator dictionary.
-    The simple word list should be provided in lower case. 
+    The simple word list should be provided in lower case.
     """
     from nltk.tokenize import sent_tokenize
     from hyphenator import Hyphenator
@@ -34,8 +34,12 @@ def getTextScores(text, locale='en_GB', simplewordlist=[]):
               'wordletter_average': 0,      # letters per word
               'wordsent_average': 0         # sentences per word
               }
-    
+
     sentences = sent_tokenize(text)
+    sent_count = len(sentences)  # don't assign this to scores, as sentences may need to be recalculated
+    if smoggy and sent_count > 30:  # see http://webpages.charter.net/ghal/SMOG_Readability_Formula_G._Harry_McLaughlin_%281969%29.pdf
+        # get a sample of 10 sentences from the beginning, middle and the end of the text
+        sentences = sentences[:10] + sentences[int(sent_count/2) -5:5+ int(sent_count/2)] + sentences[-10:]
     scores['sent_count'] = len(sentences)
 
     for s in sentences:
@@ -46,10 +50,10 @@ def getTextScores(text, locale='en_GB', simplewordlist=[]):
             syllables_count = hyphenator.inserted(w).count('-') + 1
             scores['letter_count'] = scores['letter_count'] + len(w)
             scores['syll_count'] = scores['syll_count'] + syllables_count
-            
+
             if syllables_count > 2:
                 scores['polysyllword_count'] = scores['polysyllword_count'] + 1
-            
+
             if simplewordlist:
                 if w.lower() in simplewordlist:
                     scores['simpleword_count'] = scores['simpleword_count'] + 1
